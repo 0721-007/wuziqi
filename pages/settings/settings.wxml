@@ -1,0 +1,113 @@
+<view class="settings-container">
+  <!-- 音效设置 -->
+  <view class="settings-section">
+    <view class="section-title">音效设置</view>
+    <view class="setting-item">
+      <text class="setting-label">游戏音效</text>
+      <switch class="setting-switch" checked="{{soundEnabled}}" bindchange="toggleSound" color="#4CAF50"></switch>
+    </view>
+    <view class="setting-item">
+      <text class="setting-label">背景音乐</text>
+      <switch class="setting-switch" checked="{{musicEnabled}}" bindchange="toggleMusic" color="#4CAF50"></switch>
+    </view>
+    <view class="setting-item" wx:if="{{soundEnabled}}">
+      <text class="setting-label">音量大小</text>
+      <view class="volume-control">
+        <slider value="{{volume}}" min="0" max="100" bindchange="changeVolume" activeColor="#4CAF50" backgroundColor="#e0e0e0"></slider>
+        <text class="volume-text">{{volume}}%</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 游戏设置 -->
+  <view class="settings-section">
+    <view class="section-title">游戏设置</view>
+    <view class="setting-item">
+      <text class="setting-label">AI难度</text>
+      <picker class="setting-picker" bindchange="changeAIDifficulty" value="{{aiDifficultyIndex}}" range="{{aiDifficulties}}" range-key="{{'name'}}">
+        <view class="picker-content">
+          <text class="picker-text">{{aiDifficulties[aiDifficultyIndex].name}}</text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+    <view class="setting-item">
+      <text class="setting-label">棋盘主题</text>
+      <picker class="setting-picker" bindchange="changeBoardTheme" value="{{boardThemeIndex}}" range="{{boardThemes}}" range-key="{{'name'}}">
+        <view class="picker-content">
+          <text class="picker-text">{{boardThemes[boardThemeIndex].name}}</text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+    <view class="setting-item">
+      <text class="setting-label">自动保存</text>
+      <switch class="setting-switch" checked="{{autoSave}}" bindchange="toggleAutoSave" color="#4CAF50"></switch>
+    </view>
+    <view class="setting-item">
+      <text class="setting-label">显示落子提示</text>
+      <switch class="setting-switch" checked="{{showHints}}" bindchange="toggleShowHints" color="#4CAF50"></switch>
+    </view>
+    <view class="setting-item">
+      <text class="setting-label">落子动画</text>
+      <switch class="setting-switch" checked="{{animationEnabled}}" bindchange="toggleAnimation" color="#4CAF50"></switch>
+    </view>
+  </view>
+
+  <!-- 网络设置 -->
+  <view class="settings-section">
+    <view class="section-title">网络设置</view>
+    <view class="setting-item">
+      <text class="setting-label">省流量模式</text>
+      <switch class="setting-switch" checked="{{dataSavingMode}}" bindchange="toggleDataSaving" color="#4CAF50"></switch>
+    </view>
+    <view class="setting-item" wx:if="{{!dataSavingMode}}">
+      <text class="setting-label">自动更新</text>
+      <switch class="setting-switch" checked="{{autoUpdate}}" bindchange="toggleAutoUpdate" color="#4CAF50"></switch>
+    </view>
+  </view>
+
+  <!-- 隐私设置 -->
+  <view class="settings-section">
+    <view class="section-title">隐私设置</view>
+    <view class="setting-item">
+      <text class="setting-label">允许他人查看战绩</text>
+      <switch class="setting-switch" checked="{{allowProfileView}}" bindchange="toggleProfileView" color="#4CAF50"></switch>
+    </view>
+    <view class="setting-item">
+      <text class="setting-label">接收游戏邀请</text>
+      <switch class="setting-switch" checked="{{receiveInvites}}" bindchange="toggleInvites" color="#4CAF50"></switch>
+    </view>
+  </view>
+
+  <!-- 其他设置 -->
+  <view class="settings-section">
+    <view class="section-title">其他设置</view>
+    <view class="setting-item" bindtap="clearCache">
+      <text class="setting-label">清除缓存</text>
+      <text class="setting-value">{{cacheSize}}</text>
+    </view>
+    <view class="setting-item" bindtap="exportData">
+      <text class="setting-label">导出数据</text>
+      <text class="setting-arrow">›</text>
+    </view>
+    <view class="setting-item" bindtap="resetSettings">
+      <text class="setting-label">重置设置</text>
+      <text class="setting-arrow">›</text>
+    </view>
+    <view class="setting-item" bindtap="aboutApp">
+      <text class="setting-label">关于应用</text>
+      <text class="setting-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 保存按钮 -->
+  <view class="save-section">
+    <button class="btn-save" bindtap="saveSettings">保存设置</button>
+  </view>
+</view>
+
+<!-- 提示信息 -->
+<view class="toast" wx:if="{{showToast}}">
+  <text class="toast-text">{{toastText}}</text>
+</view>

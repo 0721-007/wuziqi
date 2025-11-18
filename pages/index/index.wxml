@@ -1,0 +1,144 @@
+<!-- 首页 - index.wxml -->
+<view class="container">
+  <!-- 顶部导航栏 -->
+  <view class="navbar">
+    <text class="navbar-title">五子棋</text>
+    <button class="settings-btn" bindtap="goToSettings">
+      <text class="settings-icon">⚙</text>
+    </button>
+  </view>
+  
+  <!-- 用户信息卡片 -->
+  <view class="user-card" wx:if="{{userInfo}}">
+    <view class="user-avatar">
+      <image src="{{userInfo.avatarUrl}}" class="avatar-img"></image>
+    </view>
+    <view class="user-info">
+      <text class="user-name">{{userInfo.nickName}}</text>
+      <view class="user-stats">
+        <text class="stat-item">等级 {{userLevel}}</text>
+        <text class="stat-item">胜率 {{winRate}}</text>
+        <text class="stat-item">连胜 {{currentStreak}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 游戏模式选择 -->
+  <view class="game-modes">
+    <view class="mode-card ai-mode" bindtap="startAIGame">
+      <view class="mode-icon">
+        <text class="icon">🤖</text>
+      </view>
+      <view class="mode-content">
+        <text class="mode-title">人机对战</text>
+        <text class="mode-desc">挑战智能AI，提升棋力</text>
+        <view class="mode-difficulty">
+          <text class="difficulty-label">难度:</text>
+          <picker 
+            bindchange="onDifficultyChange" 
+            value="{{difficultyIndex}}" 
+            range="{{difficultyOptions}}"
+            class="difficulty-picker"
+          >
+            <text class="difficulty-text">{{currentDifficulty}}</text>
+          </picker>
+        </view>
+      </view>
+      <view class="mode-arrow">
+        <text class="arrow">›</text>
+      </view>
+    </view>
+    
+    <view class="mode-card multiplayer-mode" bindtap="goToMultiplayer">
+      <view class="mode-icon">
+        <text class="icon">👥</text>
+      </view>
+      <view class="mode-content">
+        <text class="mode-title">好友对战</text>
+        <text class="mode-desc">邀请好友，实时对弈</text>
+        <text class="mode-status">{{onlineUsers}} 人在线</text>
+      </view>
+      <view class="mode-arrow">
+        <text class="arrow">›</text>
+      </view>
+    </view>
+    
+    <view class="mode-card quick-mode" bindtap="startQuickGame">
+      <view class="mode-icon">
+        <text class="icon">⚡</text>
+      </view>
+      <view class="mode-content">
+        <text class="mode-title">快速开始</text>
+        <text class="mode-desc">立即开始一局游戏</text>
+        <text class="mode-status">上次: {{lastGameTime}}</text>
+      </view>
+      <view class="mode-arrow">
+        <text class="arrow">›</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 快速操作 -->
+  <view class="quick-actions">
+    <button class="action-btn rank-btn" bindtap="goToRank">
+      <text class="btn-icon">🏆</text>
+      <text class="btn-text">排行榜</text>
+    </button>
+    
+    <button class="action-btn history-btn" bindtap="goToHistory">
+      <text class="btn-icon">📊</text>
+      <text class="btn-text">对战记录</text>
+    </button>
+    
+    <button class="action-btn tutorial-btn" bindtap="goToTutorial">
+      <text class="btn-icon">📖</text>
+      <text class="btn-text">游戏教程</text>
+    </button>
+  </view>
+  
+  <!-- 最近对局 -->
+  <view class="recent-games" wx:if="{{recentGames.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">最近对局</text>
+      <text class="section-more" bindtap="goToHistory">查看更多</text>
+    </view>
+    
+    <view class="game-list">
+      <block wx:for="{{recentGames}}" wx:key="id" wx:for-item="game">
+        <view class="game-item" bindtap="reviewGame" data-game="{{game}}">
+          <view class="game-result {{game.result}}">
+            <text class="result-icon">{{game.result === 'win' ? '✓' : game.result === 'lose' ? '✗' : '='}}</text>
+          </view>
+          <view class="game-info">
+            <text class="game-opponent">{{game.opponent}}</text>
+            <text class="game-date">{{game.date}}</text>
+          </view>
+          <view class="game-duration">
+            <text class="duration-text">{{game.duration}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+  
+  <!-- 成就展示 -->
+  <view class="achievements" wx:if="{{achievements.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">最近成就</text>
+    </view>
+    
+    <view class="achievement-list">
+      <block wx:for="{{achievements}}" wx:key="id" wx:for-item="achievement">
+        <view class="achievement-item">
+          <view class="achievement-icon {{achievement.rarity}}">
+            <text class="icon">{{achievement.icon}}</text>
+          </view>
+          <view class="achievement-info">
+            <text class="achievement-name">{{achievement.name}}</text>
+            <text class="achievement-desc">{{achievement.description}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

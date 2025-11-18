@@ -1,0 +1,82 @@
+<!-- 游戏状态栏组件 - game-status.wxml -->
+<view class="game-status-container">
+  <!-- 当前玩家信息 -->
+  <view class="current-player-section">
+    <view class="player-avatar">
+      <image 
+        wx:if="{{currentPlayer === 1}}" 
+        src="{{blackPlayer.avatar || '/assets/icons/black-piece.png'}}"
+        class="avatar-img"
+      ></image>
+      <image 
+        wx:else 
+        src="{{whitePlayer.avatar || '/assets/icons/white-piece.png'}}"
+        class="avatar-img"
+      ></image>
+    </view>
+    <view class="player-info">
+      <text class="player-name">{{currentPlayer === 1 ? blackPlayer.name : whitePlayer.name}}</text>
+      <text class="player-status">{{currentPlayer === 1 ? '黑子' : '白子'}} · {{gameStatusText}}</text>
+    </view>
+  </view>
+  
+  <!-- 游戏状态信息 -->
+  <view class="game-info-section">
+    <view class="info-item">
+      <text class="info-label">回合</text>
+      <text class="info-value">{{currentRound}}</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">用时</text>
+      <text class="info-value">{{gameTime}}</text>
+    </view>
+    <view class="info-item" wx:if="{{aiDifficulty}}">
+      <text class="info-label">难度</text>
+      <text class="info-value">{{aiDifficultyText}}</text>
+    </view>
+  </view>
+  
+  <!-- 游戏控制按钮 -->
+  <view class="game-controls">
+    <button 
+      class="control-btn undo-btn" 
+      bindtap="onUndo"
+      disabled="{{!canUndo}}"
+      hover-class="btn-hover"
+    >
+      <text class="btn-icon">↶</text>
+      <text class="btn-text">悔棋</text>
+    </button>
+    
+    <button 
+      class="control-btn hint-btn" 
+      bindtap="onHint"
+      disabled="{{!canHint}}"
+      hover-class="btn-hover"
+    >
+      <text class="btn-icon">💡</text>
+      <text class="btn-text">提示</text>
+    </button>
+    
+    <button 
+      class="control-btn settings-btn" 
+      bindtap="onSettings"
+      hover-class="btn-hover"
+    >
+      <text class="btn-icon">⚙</text>
+      <text class="btn-text">设置</text>
+    </button>
+  </view>
+  
+  <!-- 游戏状态提示 -->
+  <view wx:if="{{showStatusMessage}}" class="status-message {{statusMessageType}}">
+    <text class="status-text">{{statusMessage}}</text>
+    <button 
+      wx:if="{{statusMessageType === 'warning'}}" 
+      class="status-action-btn"
+      bindtap="onStatusAction"
+    >
+      {{statusActionText}}
+    </button>
+  </view>
+</view>

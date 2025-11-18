@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线五子棋 - 远程对战</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chessboard.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 标题栏 -->
+        <header class="header">
+            <h1>在线五子棋</h1>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">连接中...</span>
+                <button class="btn btn-secondary" id="connectBtn" style="margin-left: 10px; padding: 5px 10px; font-size: 0.8rem;">重新连接</button>
+                <button class="btn btn-primary" id="testBtn" style="margin-left: 10px; padding: 5px 10px; font-size: 0.8rem;">测试</button>
+            </div>
+        </header>
+
+        <!-- 游戏区域 -->
+        <main class="game-area">
+            <!-- 玩家信息 -->
+            <div class="player-info">
+                <div class="player player-black" id="playerBlack">
+                    <div class="player-avatar">⚫</div>
+                    <div class="player-details">
+                        <div class="player-name">玩家1 (黑子)</div>
+                        <div class="player-status" id="blackStatus">等待连接</div>
+                        <div class="player-score" id="blackScore">0</div>
+                    </div>
+                </div>
+                
+                <div class="game-timer">
+                    <div class="timer-display" id="gameTimer">00:00</div>
+                    <div class="turn-indicator" id="turnIndicator">准备开始</div>
+                </div>
+                
+                <div class="player player-white" id="playerWhite">
+                    <div class="player-avatar">⚪</div>
+                    <div class="player-details">
+                        <div class="player-name">玩家2 (白子)</div>
+                        <div class="player-status" id="whiteStatus">等待连接</div>
+                        <div class="player-score" id="whiteScore">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 棋盘容器 -->
+            <div class="chessboard-container">
+                <canvas id="chessboard" width="600" height="600"></canvas>
+                <div class="board-overlay" id="boardOverlay">
+                    <div class="waiting-message">
+                        <h3>等待创建房间...</h3>
+                        <p>房间号: <span id="roomId">未创建</span></p>
+                        <button class="btn btn-primary" id="shareRoom" disabled>分享房间</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 游戏控制 -->
+            <div class="game-controls">
+                <button class="btn btn-secondary" id="undoBtn" disabled>悔棋</button>
+                <button class="btn btn-secondary" id="restartBtn">重新开始</button>
+                <button class="btn btn-secondary" id="newRoomBtn">新建房间</button>
+            </div>
+        </main>
+
+        <!-- 聊天区域 -->
+        <aside class="chat-panel">
+            <div class="chat-header">
+                <h3>游戏聊天</h3>
+                <button class="btn-icon" id="toggleChat">−</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="system-message">欢迎来到在线五子棋！</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="输入消息..." maxlength="100">
+                <button class="btn btn-primary" id="sendBtn">发送</button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 游戏结束弹窗 -->
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content">
+            <h2 id="gameResult">游戏结束</h2>
+            <p id="gameResultDetail"></p>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="playAgainBtn">再玩一局</button>
+                <button class="btn btn-secondary" id="closeModal">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分享弹窗 -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <h3>分享房间</h3>
+            <p>将以下链接发送给你的朋友：</p>
+            <div class="share-link">
+                <input type="text" id="shareLink" readonly>
+                <button class="btn btn-secondary" id="copyLink">复制</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="closeShareModal">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/gobang.js"></script>
+    <script src="js/network.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // 调试信息
+        console.log('页面加载完成，开始初始化...');
+        console.log('Socket.IO可用:', typeof io !== 'undefined');
+        
+        // 检查网络连接
+        setTimeout(() => {
+            console.log('网络状态检查完成');
+        }, 3000);
+    </script>
+</body>
+</html>

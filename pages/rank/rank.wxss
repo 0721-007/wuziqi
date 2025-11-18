@@ -1,0 +1,547 @@
+/** 排行榜页面样式 */
+
+.rank-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f5dc 0%, #e8e4d9 100%);
+}
+
+/* 顶部导航 */
+.rank-header {
+  background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+  padding: 40rpx 30rpx 20rpx;
+  border-radius: 0 0 30rpx 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(139, 69, 19, 0.3);
+}
+
+.header-title {
+  display: block;
+  text-align: center;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 30rpx;
+  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.rank-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16rpx;
+  padding: 8rpx;
+}
+
+.tab-item {
+  flex: 1;
+  padding: 20rpx 10rpx;
+  text-align: center;
+  border-radius: 12rpx;
+  transition: all 0.3s ease;
+}
+
+.tab-item.active {
+  background: white;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.tab-item.active .tab-text {
+  color: #8b4513;
+  font-weight: bold;
+}
+
+.tab-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+  transition: color 0.3s ease;
+}
+
+/* 我的排名卡片 */
+.my-rank-card {
+  margin: 30rpx;
+  padding: 40rpx;
+  background: white;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+}
+
+.rank-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.rank-number {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 30rpx;
+  min-width: 100rpx;
+}
+
+.rank-text {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #8b4513;
+  margin-bottom: 8rpx;
+}
+
+.rank-label {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.user-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  border: 4rpx solid #8b4513;
+}
+
+.user-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.score-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120rpx;
+}
+
+.score-text {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #ff9800;
+  margin-bottom: 8rpx;
+}
+
+.score-label {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.stats-info {
+  display: flex;
+  justify-content: space-around;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 8rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+/* 排行榜列表 */
+.rank-list {
+  flex: 1;
+  margin: 0 30rpx;
+  background: white;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+  max-height: calc(100vh - 500rpx);
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: background 0.2s ease;
+}
+
+.rank-item:active {
+  background: #f8f8f8;
+}
+
+.rank-item:last-child {
+  border-bottom: none;
+}
+
+.rank-item.top-rank {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+}
+
+.rank-badge {
+  position: relative;
+  margin-right: 30rpx;
+  min-width: 80rpx;
+}
+
+.rank-number {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #666666;
+  text-align: center;
+  display: block;
+}
+
+.rank-number.top-1 {
+  color: #ffd700;
+  font-size: 40rpx;
+}
+
+.rank-number.top-2 {
+  color: #c0c0c0;
+  font-size: 36rpx;
+}
+
+.rank-number.top-3 {
+  color: #cd7f32;
+  font-size: 34rpx;
+}
+
+.rank-crown {
+  position: absolute;
+  top: -20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.crown-icon {
+  font-size: 32rpx;
+}
+
+.user-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  border: 4rpx solid #e0e0e0;
+}
+
+.user-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 8rpx;
+}
+
+.user-name.current-user {
+  color: #8b4513;
+}
+
+.user-level {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.user-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-right: 20rpx;
+}
+
+.win-rate {
+  font-size: 24rpx;
+  color: #4caf50;
+  margin-bottom: 8rpx;
+}
+
+.total-games {
+  font-size: 22rpx;
+  color: #999999;
+}
+
+.user-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 120rpx;
+}
+
+.score {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #ff9800;
+  margin-bottom: 8rpx;
+}
+
+.score-change {
+  font-size: 24rpx;
+}
+
+.score-change.up {
+  color: #4caf50;
+}
+
+.score-change.down {
+  color: #f44336;
+}
+
+.load-more {
+  padding: 40rpx;
+  text-align: center;
+}
+
+.load-text {
+  font-size: 28rpx;
+  color: #999999;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 40rpx;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+  color: #cccccc;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #666666;
+  margin-bottom: 20rpx;
+}
+
+.empty-desc {
+  font-size: 28rpx;
+  color: #999999;
+}
+
+/* 排名规则 */
+.rank-rules {
+  margin: 30rpx;
+  text-align: center;
+}
+
+.rules-text {
+  font-size: 28rpx;
+  color: #8b4513;
+  background: white;
+  padding: 20rpx 40rpx;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 规则弹窗 */
+.rules-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85%;
+  max-width: 700rpx;
+  max-height: 80vh;
+  background: white;
+  border-radius: 24rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40rpx 40rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 40rpx;
+  color: #999999;
+  padding: 10rpx;
+}
+
+.rules-content {
+  max-height: 60vh;
+  padding: 0 40rpx;
+}
+
+.rule-item {
+  padding: 30rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.rule-item:last-child {
+  border-bottom: none;
+}
+
+.rule-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #8b4513;
+  margin-bottom: 16rpx;
+}
+
+.rule-desc {
+  display: block;
+  font-size: 28rpx;
+  color: #666666;
+  line-height: 1.6;
+}
+
+/* 响应式设计 */
+@media (max-width: 375px) {
+  .rank-header {
+    padding: 30rpx 20rpx 15rpx;
+  }
+  
+  .header-title {
+    font-size: 40rpx;
+    margin-bottom: 20rpx;
+  }
+  
+  .tab-text {
+    font-size: 24rpx;
+  }
+  
+  .my-rank-card {
+    margin: 20rpx;
+    padding: 30rpx;
+  }
+  
+  .rank-text {
+    font-size: 40rpx;
+  }
+  
+  .user-name {
+    font-size: 28rpx;
+  }
+  
+  .score-text {
+    font-size: 32rpx;
+  }
+  
+  .rank-list {
+    margin: 0 20rpx;
+  }
+  
+  .rank-item {
+    padding: 20rpx;
+  }
+  
+  .user-avatar {
+    width: 60rpx;
+    height: 60rpx;
+  }
+  
+  .user-name {
+    font-size: 26rpx;
+  }
+  
+  .score {
+    font-size: 28rpx;
+  }
+  
+  .rules-text {
+    padding: 15rpx 30rpx;
+  }
+  
+  .modal-content {
+    width: 90%;
+  }
+  
+  .modal-header {
+    padding: 30rpx 30rpx 15rpx;
+  }
+  
+  .rule-title {
+    font-size: 28rpx;
+  }
+  
+  .rule-desc {
+    font-size: 24rpx;
+  }
+}
+
+@media (min-width: 768px) {
+  .rank-container {
+    max-width: 750rpx;
+    margin: 0 auto;
+  }
+  
+  .my-rank-card {
+    padding: 50rpx;
+  }
+  
+  .rank-text {
+    font-size: 56rpx;
+  }
+  
+  .user-name {
+    font-size: 36rpx;
+  }
+  
+  .score-text {
+    font-size: 40rpx;
+  }
+  
+  .rank-item {
+    padding: 40rpx;
+  }
+  
+  .user-avatar {
+    width: 100rpx;
+    height: 100rpx;
+  }
+  
+  .user-name {
+    font-size: 32rpx;
+  }
+  
+  .score {
+    font-size: 36rpx;
+  }
+}

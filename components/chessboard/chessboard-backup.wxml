@@ -1,0 +1,69 @@
+<!-- 棋盘组件 - chessboard.wxml -->
+<view class="chessboard-container">
+  <!-- 棋盘背景 -->
+  <view class="board-background">
+    <!-- 棋盘网格 -->
+    <canvas 
+      canvas-id="{{canvasId}}" 
+      class="chessboard-canvas"
+      style="width: {{boardSize}}px; height: {{boardSize}}px;"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+      bindtouchend="onTouchEnd"
+    ></canvas>
+    
+    <!-- 棋子层 -->
+    <view class="chess-pieces-layer" style="width: {{boardSize}}px; height: {{boardSize}}px;">
+      <block wx:for="{{board}}" wx:for-item="row" wx:for-index="rowIndex" wx:key="rowIndex">
+        <block wx:for="{{row}}" wx:for-item="cell" wx:for-index="colIndex" wx:key="colIndex">
+          <view 
+            wx:if="{{cell !== 0}}"
+            class="chess-piece {{cell === 1 ? 'black' : 'white'}}"
+            style="left: {{colIndex * cellSize + cellSize/2 - pieceSize/2}}px; top: {{rowIndex * cellSize + cellSize/2 - pieceSize/2}}px; width: {{pieceSize}}px; height: {{pieceSize}}px;"
+            animation="{{pieceAnimations[rowIndex * 15 + colIndex]}}"
+            bindtap="onPieceTap"
+            data-row="{{rowIndex}}"
+            data-col="{{colIndex}}"
+          >
+            <!-- 棋子高光效果 -->
+            <view class="piece-highlight" wx:if="{{showHighlight && lastMove && lastMove.row === rowIndex && lastMove.col === colIndex}}"></view>
+          </view>
+        </block>
+      </block>
+    </view>
+    
+    <!-- 当前落子提示 -->
+    <view 
+      wx:if="{{showCurrentMove && currentMove.row >= 0 && currentMove.col >= 0}}"
+      class="current-move-indicator"
+      style="left: {{currentMove.col * cellSize + cellSize/2 - 10}}px; top: {{currentMove.row * cellSize + cellSize/2 - 10}}px;"
+    >
+      <view class="move-indicator-pulse"></view>
+    </view>
+    
+    <!-- 获胜连线高亮 -->
+    <view wx:if="{{winningLine && winningLine.length > 0}}" class="winning-line-layer">
+      <view 
+        class="winning-line"
+        style="{{getWinningLineStyle(winningLine)}}"
+      ></view>
+    </view>
+  </view>
+  
+  <!-- 坐标标签 -->
+  <view wx:if="{{showCoordinates}}" class="coordinate-labels">
+    <!-- 横向坐标 (A-O) -->
+    <view class="coordinate-row top-coordinates">
+      <block wx:for="{{15}}" wx:for-index="index" wx:key="index">
+        <text class="coordinate-label">{{String.fromCharCode(65 + index)}}</text>
+      </block>
+    </view>
+    
+    <!-- 纵向坐标 (1-15) -->
+    <view class="coordinate-col left-coordinates">
+      <block wx:for="{{15}}" wx:for-index="index" wx:key="index">
+        <text class="coordinate-label">{{index + 1}}</text>
+      </block>
+    </view>
+  </view>
+</view>
