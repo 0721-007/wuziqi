@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
@@ -15,7 +16,29 @@ const io = socketIo(server, {
 });
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../web')));
+const envStatic = process.env.STATIC_DIR;
+const candidates = [
+  envStatic ? (path.isAbsolute(envStatic) ? envStatic : path.join(__dirname, envStatic)) : null,
+  path.join(__dirname, '../web'),
+  path.join(__dirname, 'web')
+].filter(Boolean);
+const staticDir = candidates.find(p => {
+  try { return fs.existsSync(p); } catch (_) { return false; }
+});
+if (staticDir) {
+  console.log('Static directory:', staticDir);
+  app.use(express.static(staticDir));
+  app.use('/css', express.static(path.join(staticDir, 'css')));
+  app.use('/js', express.static(path.join(staticDir, 'js')));
+}
+app.get('/', (req, res, next) => {
+  const indexPath = staticDir ? path.join(staticDir, 'index.html') : null;
+  if (indexPath && fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(500).send('Static directory not found. Set STATIC_DIR or include web directory.');
+  }
+});
 
 class GameRoom {
   constructor(roomId) {
