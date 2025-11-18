@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "postinstall": "npm ci --prefix server || npm install --prefix server",
-    "start": "node server/server.js"
+    "postinstall": "node -e \"try{require('fs').statSync('server/package.json');process.exit(0)}catch(e){process.exit(1)}\" && npm ci --prefix server || echo Skip",
+    "start": "node server.js"
   }
 }
