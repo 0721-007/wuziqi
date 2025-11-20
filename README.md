@@ -29,25 +29,22 @@ open web/index.html
 
 ### 在线部署
 
-#### 使用Vercel部署（推荐）
+本项目使用 WebSocket，**不支持 Vercel** 等 Serverless 平台。建议部署到支持长连接的云平台，如：
 
-1. 安装Vercel CLI:
-```bash
-npm i -g vercel
-```
+- **Render** (推荐)
+- **Railway**
+- **Heroku**
+- **DigitalOcean App Platform**
+- **自建 VPS**
 
-2. 部署到Vercel:
-```bash
-vercel
-```
+#### 部署步骤（通用）
 
-#### 使用其他平台部署
-
-支持任何支持Node.js和WebSocket的云平台，如：
-- Railway
-- Render
-- Heroku
-- DigitalOcean App Platform
+1. 确保项目根目录有 `Dockerfile` 和 `package.json`
+2. 将代码推送到 GitHub/GitLab
+3. 在云平台连接仓库
+4. 设置环境变量（可选）：
+   - `PORT`: 3000 (默认)
+5. 部署启动命令: `npm start`
 
 ## 🛠️ 技术栈
 
@@ -55,7 +52,6 @@ vercel
 - **后端**: Node.js, Express, Socket.IO
 - **实时通信**: WebSocket
 - **UI框架**: 原生CSS，支持响应式设计
-- **部署**: Vercel, 支持各种云平台
 
 ## 📱 使用方法
 

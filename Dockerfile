@@ -1,19 +1,17 @@
 FROM node:18-alpine
 WORKDIR /app
 
-# Install dependencies for server
-COPY server/package*.json ./server/
-RUN npm ci --omit=dev --prefix server
+# Install dependencies
+COPY package*.json ./
+RUN npm ci --omit=dev
 
 # Copy application source
-COPY server ./server
-COPY web ./web
+COPY . .
 
 # Environment and port
 ENV NODE_ENV=production
-# Optional: ensure static dir resolves to /app/web
 ENV STATIC_DIR=web
 EXPOSE 3000
 
 # Start server
-CMD ["node", "server/server.js"]
+CMD ["node", "server.js"]
