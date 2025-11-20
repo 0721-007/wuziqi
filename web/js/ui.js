@@ -12,6 +12,8 @@ class GameUI {
         this.boardSize = 15;
         this.cellSize = 40;
         this.boardPadding = 20;
+        // 本地对战模式下使用的简单计分板（1=黑,2=白）
+        this.localScores = { 1: 0, 2: 0 };
         
         this.setupCanvas();
         this.setupEventListeners();
@@ -135,11 +137,30 @@ class GameUI {
         const x = this.boardPadding + col * this.cellSize;
         const y = this.boardPadding + row * this.cellSize;
         
-        this.ctx.strokeStyle = '#FF0000';
-        this.ctx.lineWidth = 3;
+        this.ctx.save();
+        this.ctx.strokeStyle = '#ff3333'; // 更鲜艳的红
+        this.ctx.lineWidth = 2;
+        
+        // 绘制一个小十字符号，而不是圆圈，这样更现代且不遮挡棋子质感
+        const size = this.cellSize * 0.15;
+        
         this.ctx.beginPath();
-        this.ctx.arc(x, y, this.cellSize * 0.45, 0, 2 * Math.PI);
+        // 横线
+        this.ctx.moveTo(x - size, y);
+        this.ctx.lineTo(x + size, y);
+        // 竖线
+        this.ctx.moveTo(x, y - size);
+        this.ctx.lineTo(x, y + size);
+        
         this.ctx.stroke();
+        
+        // 再加一个小圆点在中心，颜色反转
+        this.ctx.fillStyle = '#ff3333';
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        this.ctx.restore();
     }
     
     /**
@@ -224,17 +245,52 @@ class GameUI {
      * 处理格子点击
      */
     handleCellClick(row, col) {
+        // 先判断当前是否处于“在线房间模式”
+        const inOnlineRoom =
+            this.network &&
+            this.network.isConnected &&
+            typeof this.network.getRoomId === 'function' &&
+            this.network.getRoomId();
+
+        if (inOnlineRoom) {
+            // 在线模式：完全由服务器裁决是否能落子以及轮到谁
+            // 这里只把点击位置发给服务器，本地不直接修改棋盘状态
+            this.network.makeMove(row, col);
+            return;
+        }
+
+        // 本地/离线模式：使用前端 GobangGame 进行完整落子和判定
         if (!this.game.canMakeMove(row, col)) {
             return;
         }
+
         const current = this.game.getCurrentPlayer();
         const result = this.game.makeMove(row, col, current);
+
         if (result && result.success) {
             this.drawPiece(row, col, current);
             this.highlightLastMove(row, col);
             this.updateTurnIndicator();
+
+            if (result.gameOver) {
+                if (result.winner) {
+                    const winnerPlayer = result.winner; // 1=黑,2=白
+                    if (this.localScores[winnerPlayer] !== undefined) {
+                        this.localScores[winnerPlayer] += 1;
+                    }
+                    this.updateScores(this.localScores);
+
+                    const winnerInfo = {
+                        player: winnerPlayer,
+                        playerName: winnerPlayer === 1 ? '黑方' : '白方',
+                        winningLine: []
+                    };
+                    this.showGameOver(winnerInfo);
+                } else {
+                    this.showGameOver(null);
+                }
+            }
         }
-        this.network.makeMove(row, col);
     }
     
     /**

@@ -108,6 +108,7 @@ function setupEventListeners() {
     
     network.on('moveMade', function(roomInfo) {
         console.log('棋子移动:', roomInfo);
+        console.log('当前比分（来自服务器）:', roomInfo.scores);
         
         // 采用服务器权威状态，避免重复应用本地乐观更新
         game.setGameState(roomInfo.gameState);
@@ -116,11 +117,15 @@ function setupEventListeners() {
         ui.updateScores(roomInfo.scores);
         
         // 检查游戏是否结束
-        if (roomInfo.gameState.winner) {
-            game.endGame(roomInfo.gameState.winner);
-            ui.showGameOver(roomInfo.gameState.winner);
-            const winnerText = roomInfo.gameState.winner === 1 ? '黑方获胜！' : '白方获胜！';
-            chat.addSystemMessage(`游戏结束！${winnerText}`);
+        const winnerInfo = roomInfo.gameState && roomInfo.gameState.winner;
+        if (winnerInfo) {
+            // winnerInfo 来自服务端：{ player, playerName, winningLine }
+            game.endGame(winnerInfo.player);
+            ui.showGameOver(winnerInfo);
+
+            const sideText = winnerInfo.player === 1 ? '黑方' : '白方';
+            const namePart = winnerInfo.playerName ? `（${winnerInfo.playerName}）` : '';
+            chat.addSystemMessage(`游戏结束！${sideText}${namePart} 获胜！`);
         }
     });
     

@@ -7,42 +7,52 @@
 }
 
 body {
-    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', sans-serif;
+    background: radial-gradient(circle at center, #4a5568 0%, #2d3748 100%); /* 深色高级灰背景 */
     min-height: 100vh;
     color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .container {
-    max-width: 1200px;
+    width: 100%;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 20px;
     display: grid;
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: 1fr 320px; /* 侧边栏稍宽一点 */
     grid-template-rows: auto 1fr;
-    gap: 20px;
-    min-height: 100vh;
+    gap: 24px;
+    height: 95vh; /* 限制高度，让内容更紧凑 */
+    min-height: 600px;
 }
 
-/* 头部 */
+/* 头部 - 更加简洁 */
 .header {
     grid-column: 1 / -1;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 20px 30px;
-    border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 16px 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
 .header h1 {
-    font-size: 2.5rem;
-    background: linear-gradient(45deg, #8B4513, #D2691E);
+    font-size: 1.8rem;
+    background: linear-gradient(45deg, #E6C89C, #F0E68C); /* 金色文字 */
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 /* 连接状态 */
@@ -73,36 +83,48 @@ body {
 
 /* 游戏区域 */
 .game-area {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
     padding: 30px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* 玩家信息 */
+/* 玩家信息条 */
 .player-info {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 40px; /* 拉开间距 */
     align-items: center;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 10px;
+    margin-bottom: 25px;
+    padding: 15px 40px;
+    background: #fff;
+    border-radius: 50px; /* 胶囊形状 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 700px;
 }
 
 .player {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 15px 20px;
-    border-radius: 10px;
-    transition: all 0.3s ease;
+    gap: 12px;
+    padding: 8px 20px;
+    border-radius: 30px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
 }
 
 .player.active {
-    background: #e8f5e8;
-    box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+    background: #fff;
+    border-color: #4CAF50;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+    transform: scale(1.05);
 }
 
 .player-avatar {
@@ -141,28 +163,42 @@ body {
 
 .game-timer {
     text-align: center;
-    padding: 0 20px;
+    min-width: 100px;
 }
 
 .timer-display {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #8B4513;
-    font-family: 'Courier New', monospace;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2d3748;
+    font-family: 'Monaco', 'Consolas', monospace;
+    background: #f0f0f0;
+    padding: 0 10px;
+    border-radius: 4px;
 }
 
 .turn-indicator {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: #666;
-    margin-top: 5px;
+    margin-top: 8px;
+    font-weight: 500;
 }
 
 /* 棋盘容器 */
 .chessboard-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 30px;
     position: relative;
+    padding: 10px;
+    background: #dcb35c; /* 棋盘底色作为衬底 */
+    border-radius: 4px;
+    box-shadow: 
+        0 20px 30px rgba(0, 0, 0, 0.4),
+        inset 0 2px 10px rgba(255,255,255,0.2); /* 增加厚重感 */
+}
+
+#chessboard {
+    border-radius: 2px;
+    cursor: crosshair;
+    background-color: #DEB887; /* Fallback */
+    display: block; /* Remove spacing */
 }
 
 .board-overlay {
@@ -208,6 +244,7 @@ body {
     justify-content: center;
     gap: 15px;
     flex-wrap: wrap;
+    margin-top: 25px;
 }
 
 /* 按钮样式 */
@@ -267,16 +304,16 @@ body {
     background: rgba(0, 0, 0, 0.1);
 }
 
-/* 聊天面板 */
+/* 侧边栏（聊天） */
 .chat-panel {
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.5);
     height: 100%;
-    min-height: 500px;
 }
 
 .chat-header {
@@ -285,18 +322,19 @@ body {
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid #eee;
+    background: rgba(255,255,255,0.8);
 }
 
 .chat-header h3 {
     font-size: 1.2rem;
     color: #333;
+    font-weight: 600;
 }
 
 .chat-messages {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
-    max-height: 400px;
 }
 
 .chat-message {
@@ -305,12 +343,15 @@ body {
     border-radius: 10px;
     background: #f8f9fa;
     animation: fadeIn 0.3s ease;
+    font-size: 0.95rem;
+    line-height: 1.4;
 }
 
 .chat-message.own {
     background: linear-gradient(45deg, #8B4513, #D2691E);
     color: white;
     margin-left: 20px;
+    border-bottom-right-radius: 2px;
 }
 
 .chat-message.system {
@@ -318,6 +359,7 @@ body {
     color: #1976d2;
     text-align: center;
     font-style: italic;
+    font-size: 0.9rem;
 }
 
 .chat-message .message-header {
@@ -325,7 +367,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 5px;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     opacity: 0.8;
 }
 
@@ -338,6 +380,7 @@ body {
     padding: 20px;
     border-top: 1px solid #eee;
     gap: 10px;
+    background: white;
 }
 
 .chat-input input {
@@ -370,6 +413,7 @@ body {
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
 }
 
 .modal.show {
@@ -386,6 +430,7 @@ body {
     width: 90%;
     transform: scale(0.8);
     transition: transform 0.3s ease;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
 }
 
 .modal.show .modal-content {
@@ -438,26 +483,20 @@ body {
     }
 }
 
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
 /* 响应式设计 */
 @media (max-width: 1024px) {
     .container {
         grid-template-columns: 1fr;
         grid-template-rows: auto 1fr auto;
+        height: auto;
     }
     
     .chat-panel {
-        min-height: 300px;
+        min-height: 400px;
+    }
+    
+    .game-area {
+        width: 100%;
     }
 }
 
@@ -485,6 +524,8 @@ body {
     .player-info {
         flex-direction: column;
         gap: 20px;
+        padding: 20px;
+        border-radius: 20px;
     }
     
     .player {
@@ -531,64 +572,5 @@ body {
         min-width: 150px;
         padding: 10px 20px;
         font-size: 0.9rem;
-    }
-}
-
-/* 深色模式支持 */
-@media (prefers-color-scheme: dark) {
-    body {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    }
-    
-    .header,
-    .game-area,
-    .chat-panel {
-        background: rgba(0, 0, 0, 0.8);
-        color: #fff;
-    }
-    
-    .player-info {
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .chat-message {
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .chat-message.own {
-        background: linear-gradient(45deg, #8B4513, #D2691E);
-    }
-    
-    .chat-message.system {
-        background: rgba(25, 118, 210, 0.2);
-        color: #64b5f6;
-    }
-}
-
-/* 高对比度模式 */
-@media (prefers-contrast: high) {
-    .btn-primary {
-        border: 2px solid #000;
-    }
-    
-    .btn-secondary {
-        border: 2px solid #fff;
-    }
-    
-    .chessboard-container {
-        border: 3px solid #000;
-    }
-}
-
-/* 减少动画模式 */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-    
-    .btn:hover {
-        transform: none !important;
     }
 }

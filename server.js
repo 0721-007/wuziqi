@@ -133,9 +133,11 @@ class GameRoom {
     const winner = this.checkWinner(row, col, player.playerNumber);
     if (winner) {
       this.gameState.winner = winner;
-      if (this.scores[winner] !== undefined) {
-        this.scores[winner] += 1;
+      const playerKey = winner.player;
+      if (this.scores[playerKey] !== undefined) {
+        this.scores[playerKey] += 1;
       }
+      console.log('房间', this.id, '更新分数:', this.scores);
     }
 
     return true;

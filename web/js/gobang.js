@@ -295,12 +295,40 @@ class GobangGame {
     setGameState(state) {
         this.board = state.board;
         this.currentPlayer = state.currentPlayer;
-        this.gameState = state.gameState;
-        this.winner = state.winner;
-        this.lastMove = state.lastMove;
-        this.moveHistory = state.moveHistory;
-        this.gameStartTime = state.gameStartTime;
-        this.mode = state.mode;
+
+        // 兼容服务端与本地不同的状态结构
+        // 优先使用显式的 gameState 字段，否则根据 gameStarted / winner 推导
+        if (state.gameState) {
+            this.gameState = state.gameState;
+        } else if (typeof state.gameStarted !== 'undefined') {
+            if (state.winner) {
+                this.gameState = GAME_STATE.FINISHED;
+            } else if (state.gameStarted) {
+                this.gameState = GAME_STATE.PLAYING;
+            } else {
+                this.gameState = GAME_STATE.WAITING;
+            }
+        }
+
+        // 服务器的 winner 是一个对象：{ player, playerName, winningLine }
+        // 本地逻辑只关心 numeric winner（1/2），用于顶部文案等
+        if (state.winner && typeof state.winner === 'object') {
+            this.winner = state.winner.player;
+        } else {
+            this.winner = state.winner || null;
+        }
+
+        // 根据 moveHistory 推导最后一步，方便高亮
+        if (Array.isArray(state.moveHistory) && state.moveHistory.length > 0) {
+            const last = state.moveHistory[state.moveHistory.length - 1];
+            this.lastMove = { row: last.row, col: last.col, player: last.player };
+        } else {
+            this.lastMove = null;
+        }
+
+        this.moveHistory = state.moveHistory || [];
+        this.gameStartTime = state.gameStartTime || this.gameStartTime || null;
+        this.mode = state.mode || this.mode;
     }
 
     /**
