@@ -1,9 +1,0 @@
-{
-  "navigationBarTitleText": "五子棋对局",
-  "enablePullDownRefresh": false,
-  "navigationBarBackgroundColor": "#667eea",
-  "navigationBarTextStyle": "white",
-  "usingComponents": {
-    "chessboard": "/components/chessboard/chessboard"
-  }
-}
