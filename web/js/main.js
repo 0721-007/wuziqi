@@ -85,6 +85,12 @@ function setupEventListeners() {
         ui.updateScores(roomInfo.scores);
         game.startGame();
         ui.hideWaitingOverlay();
+        
+        // 查找黑方名字
+        const blackPlayer = roomInfo.players.find(p => p.playerNumber === 1);
+        const blackName = blackPlayer ? blackPlayer.name : '黑方';
+        ui.showGameStartModal(`游戏开始！${blackName} 先行`);
+        
         chat.addSystemMessage('游戏开始！黑子先行');
     });
 
@@ -94,6 +100,12 @@ function setupEventListeners() {
         ui.resetUI();
         ui.updateScores(roomInfo.scores);
         ui.hideWaitingOverlay();
+        
+        // 查找黑方名字
+        const blackPlayer = roomInfo.players && roomInfo.players.find(p => p.playerNumber === 1);
+        const blackName = blackPlayer ? blackPlayer.name : '黑方';
+        ui.showGameStartModal(`新一局开始！${blackName} 先行`);
+        
         chat.addSystemMessage('新一局开始，黑子先行');
     });
     

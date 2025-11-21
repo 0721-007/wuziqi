@@ -177,7 +177,7 @@ class GameRoom {
         return {
           player: playerNumber,
           playerName: this.players.find(p => p.playerNumber === playerNumber)?.name,
-          winningLine: this.getWinningLine(row, col, dx, dy)
+          winningLine: this.getWinningLine(row, col, dx, dy, playerNumber)
         };
       }
     }
@@ -185,22 +185,30 @@ class GameRoom {
     return null;
   }
 
-  getWinningLine(row, col, dx, dy) {
+  getWinningLine(row, col, dx, dy, playerNumber) {
     const line = [[row, col]];
     
+    // 正向查找
     for (let i = 1; i < 5; i++) {
       const newRow = row + dx * i;
       const newCol = col + dy * i;
-      if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15) {
+      if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15 &&
+          this.gameState.board[newRow][newCol] === playerNumber) {
         line.push([newRow, newCol]);
+      } else {
+        break; 
       }
     }
     
+    // 反向查找
     for (let i = 1; i < 5; i++) {
       const newRow = row - dx * i;
       const newCol = col - dy * i;
-      if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15) {
+      if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15 &&
+          this.gameState.board[newRow][newCol] === playerNumber) {
         line.unshift([newRow, newCol]);
+      } else {
+        break;
       }
     }
     

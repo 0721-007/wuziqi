@@ -18,6 +18,8 @@ class GameUI {
         this.pendingMove = null;
         // 落子延迟定时器
         this.moveTimer = null;
+        // 当前玩家的编号（1=黑，2=白），用于在线模式身份校验
+        this.myPlayerNumber = null;
         
         this.setupCanvas();
         this.setupEventListeners();
@@ -166,8 +168,18 @@ class GameUI {
         this.cellSize = Math.max(24, Math.min(40, idealCell));
         const width = this.boardSize * this.cellSize + this.boardPadding * 2;
         const height = this.boardSize * this.cellSize + this.boardPadding * 2;
-        this.canvas.width = width;
-        this.canvas.height = height;
+        
+        // Retina 屏幕适配 (DPI 缩放)
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = width * dpr;
+        this.canvas.height = height * dpr;
+        
+        // 保持 CSS 尺寸不变
+        this.canvas.style.width = `${width}px`;
+        this.canvas.style.height = `${height}px`;
+        
+        this.ctx.scale(dpr, dpr);
+        
         this.drawBoard();
         window.addEventListener('resize', () => {
             this.setupCanvas();
@@ -180,7 +192,8 @@ class GameUI {
      */
     drawBoard() {
         this.ctx.fillStyle = '#DEB887';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // 注意：fillRect 的参数是逻辑像素，scale 会自动处理
+        this.ctx.fillRect(0, 0, this.boardSize * this.cellSize + this.boardPadding * 2, this.boardSize * this.cellSize + this.boardPadding * 2);
         
         this.ctx.strokeStyle = '#8B4513';
         this.ctx.lineWidth = 1;
@@ -193,13 +206,13 @@ class GameUI {
             // 横线
             this.ctx.beginPath();
             this.ctx.moveTo(this.boardPadding, y);
-            this.ctx.lineTo(this.canvas.width - this.boardPadding, y);
+            this.ctx.lineTo(this.boardSize * this.cellSize + this.boardPadding, y); // 修正为实际棋盘宽度
             this.ctx.stroke();
             
             // 竖线
             this.ctx.beginPath();
             this.ctx.moveTo(x, this.boardPadding);
-            this.ctx.lineTo(x, this.canvas.height - this.boardPadding);
+            this.ctx.lineTo(x, this.boardSize * this.cellSize + this.boardPadding); // 修正为实际棋盘高度
             this.ctx.stroke();
         }
 
@@ -209,8 +222,8 @@ class GameUI {
         this.ctx.strokeRect(
             this.boardPadding,
             this.boardPadding,
-            this.canvas.width - this.boardPadding * 2,
-            this.canvas.height - this.boardPadding * 2
+            this.boardSize * this.cellSize, // 修正：不需要减 padding * 2，因为起点是 padding
+            this.boardSize * this.cellSize
         );
         
         // 绘制星位
@@ -483,10 +496,23 @@ class GameUI {
         if (this.game.getState() !== 'playing') return;
 
         // 检查是否轮到当前客户端对应的玩家操作
+        // 在线模式下，需要校验 network.playerId 是否对应当前回合
+        const inOnlineRoom =
+            this.network &&
+            this.network.isConnected &&
+            typeof this.network.getRoomId === 'function' &&
+            this.network.getRoomId();
+
+        if (inOnlineRoom && this.myPlayerNumber !== null) {
+            // 严格校验：如果你是观众或者还没轮到你，不能操作
+            if (this.myPlayerNumber !== this.game.getCurrentPlayer()) {
+                return;
+            }
+        }
+
         if (!this.game.canMakeMove(row, col)) return;
 
         // 1. 清除之前的定时器（如果有），这就实现了“后悔”机制
-        // 只要在倒计时结束前点了别的地方，上一步就不会发生
         if (this.moveTimer) {
             clearTimeout(this.moveTimer);
             this.moveTimer = null;
@@ -504,7 +530,7 @@ class GameUI {
                 this.executeMove(row, col);
                 // 落子后清除虚影和定时器引用
                 this.pendingMove = null;
-                this.moveTimer = null;
+                this.moveTimer = null; // 注意：这里不需要 clearTimeout，因为是定时器内部执行的
                 this.updateBoard();
             }
         }, 600);
@@ -609,6 +635,15 @@ class GameUI {
         const blackPlayer = players.find(p => p.playerNumber === 1);
         const whitePlayer = players.find(p => p.playerNumber === 2);
         
+        // 确定我自己的身份
+        const myId = this.network.getPlayerId();
+        if (myId) {
+            const me = players.find(p => p.playerId === myId);
+            if (me) {
+                this.myPlayerNumber = me.playerNumber;
+            }
+        }
+        
         if (blackPlayer) {
             document.querySelector('#playerBlack .player-name').textContent = blackPlayer.name;
             document.querySelector('#playerBlack .player-status').textContent = '已连接';
@@ -681,14 +716,62 @@ class GameUI {
     }
     
     /**
+     * 显示开局提示 Toast
+     */
+    showGameStartModal(message) {
+        // 移除旧的提示（如果有）
+        const oldToast = document.querySelector('.game-start-toast');
+        if (oldToast) {
+            oldToast.remove();
+        }
+
+        // 创建新 Toast
+        const toast = document.createElement('div');
+        toast.className = 'game-start-toast';
+        toast.innerHTML = `<i class="fas fa-chess-board"></i> <span>${message}</span>`;
+        document.body.appendChild(toast);
+
+        // 强制重绘，触发动画
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+
+        // 3秒后自动消失
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 500);
+        }, 3000);
+    }
+
+    /**
      * 显示游戏结束弹窗
      */
     showGameOver(winner) {
+        console.log('显示游戏结束弹窗, winner:', winner);
+        
+        // 尝试补全 winningLine (兜底逻辑)
+        if (winner && !winner.winningLine) {
+            const lastMove = this.game.getLastMove();
+            if (lastMove) {
+                // 手动计算获胜连线
+                const line = this.game.getWinningLine(lastMove.row, lastMove.col, winner.player);
+                if (line && line.length >= 5) {
+                    console.log('前端手动计算获胜连线成功:', line);
+                    winner.winningLine = line;
+                }
+            }
+        }
+
         // 播放胜利音效
         if (winner) {
             this.playWinSound();
             // 保存获胜连线，供重绘使用
             if (winner.winningLine) {
+                console.log('获胜连线:', winner.winningLine);
                 this.winningLine = winner.winningLine;
                 this.updateBoard(); // 立即重绘以显示金光特效
             }
@@ -708,7 +791,11 @@ class GameUI {
             gameResultDetail.textContent = '双方势均力敌';
         }
         
-        modal.classList.add('show');
+        modal.style.display = 'flex'; // 强制显示
+        // 稍微延迟一点加show类，以触发transition动画
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
     }
     
     /**
@@ -717,6 +804,9 @@ class GameUI {
     hideGameOverModal() {
         const modal = document.getElementById('gameOverModal');
         modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
     }
     
     /**
