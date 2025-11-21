@@ -113,6 +113,11 @@ function setupEventListeners() {
         // 采用服务器权威状态，避免重复应用本地乐观更新
         game.setGameState(roomInfo.gameState);
         ui.updateBoard();
+        ui.playMoveSound();
+        // 已收到服务器权威落子结果，清除本地预落子状态（如果有）
+        if (ui.pendingMove) {
+            ui.pendingMove = null;
+        }
         ui.updateTurnIndicator();
         ui.updateScores(roomInfo.scores);
         

@@ -14,10 +14,62 @@ class GameUI {
         this.boardPadding = 20;
         // 本地对战模式下使用的简单计分板（1=黑,2=白）
         this.localScores = { 1: 0, 2: 0 };
+        // 在线模式下用于记录“待确认”的预落子高亮
+        this.pendingMove = null;
         
         this.setupCanvas();
         this.setupEventListeners();
         this.updateTurnIndicator();
+        
+        // 初始化音频上下文
+        this.audioCtx = null;
+    }
+
+    /**
+     * 播放落子音效
+     */
+    playMoveSound() {
+        try {
+            // 懒加载音频上下文（浏览器要求必须在用户交互后才能通过代码播放声音）
+            if (!this.audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    this.audioCtx = new AudioContext();
+                }
+            }
+
+            if (!this.audioCtx) return;
+            
+            // 恢复上下文（如果被挂起）
+            if (this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume();
+            }
+
+            const t = this.audioCtx.currentTime;
+            
+            // 创建振荡器（模拟声音源）
+            const oscillator = this.audioCtx.createOscillator();
+            const gainNode = this.audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioCtx.destination);
+            
+            // 模拟敲击声：频率快速衰减的正弦波
+            oscillator.type = 'sine';
+            // 从 600Hz 快速降到 100Hz
+            oscillator.frequency.setValueAtTime(600, t);
+            oscillator.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+            
+            // 音量包络：快速冲击后衰减
+            gainNode.gain.setValueAtTime(0, t);
+            gainNode.gain.linearRampToValueAtTime(0.3, t + 0.02); // 冲击
+            gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.15); // 衰减
+            
+            oscillator.start(t);
+            oscillator.stop(t + 0.15);
+        } catch (e) {
+            console.error('播放音效失败:', e);
+        }
     }
     
     /**
@@ -99,35 +151,55 @@ class GameUI {
     drawPiece(row, col, player) {
         const x = this.boardPadding + col * this.cellSize;
         const y = this.boardPadding + row * this.cellSize;
+        const radius = this.cellSize * 0.42; // 稍微调大一点点，更饱满
+
+        this.ctx.save();
         
+        // 1. 绘制阴影 (Shadow)
         this.ctx.beginPath();
-        this.ctx.arc(x, y, this.cellSize * 0.4, 0, 2 * Math.PI);
-        
+        this.ctx.arc(x + 2, y + 2, radius, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        this.ctx.fill();
+
+        // 2. 绘制棋子主体 (Body)
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
+
+        // 设置径向渐变，模拟光照 (光源设定在左上偏上)
+        // 参数: x0, y0, r0, x1, y1, r1
+        // 光源点在棋子的左上方 (x - radius/3, y - radius/3)
+        const gradient = this.ctx.createRadialGradient(
+            x - radius / 3, y - radius / 3, radius / 10, // 内圆（高光中心）
+            x, y, radius                                 // 外圆（棋子边缘）
+        );
+
         if (player === 1) {
-            // 黑子
-            this.ctx.fillStyle = '#000000';
-            this.ctx.strokeStyle = '#333333';
+            // 黑子：模拟黑玉/玛瑙质感
+            // 中心是深灰色反光，边缘是纯黑
+            gradient.addColorStop(0, '#666666');
+            gradient.addColorStop(0.3, '#222222');
+            gradient.addColorStop(1, '#000000');
+            this.ctx.fillStyle = gradient;
         } else {
-            // 白子
-            this.ctx.fillStyle = '#FFFFFF';
-            this.ctx.strokeStyle = '#CCCCCC';
+            // 白子：模拟云子/贝壳质感
+            // 中心是亮白，边缘是暖白/浅灰
+            gradient.addColorStop(0, '#FFFFFF');
+            gradient.addColorStop(0.3, '#F0F0F0');
+            gradient.addColorStop(1, '#D0D0D0');
+            this.ctx.fillStyle = gradient;
+        }
+
+        this.ctx.fill();
+
+        // 3. 移除之前的描边逻辑，因为渐变已经自带立体感，描边会破坏真实感
+        // 仅给白子加极淡的边缘线防止与背景混淆（如果背景太浅）
+        if (player === 2) {
+            this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+            this.ctx.lineWidth = 1;
+            this.ctx.stroke();
         }
         
-        this.ctx.fill();
-        this.ctx.lineWidth = 2;
-        this.ctx.stroke();
-        
-        // 添加阴影效果
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.shadowBlur = 5;
-        this.ctx.shadowOffsetX = 2;
-        this.ctx.shadowOffsetY = 2;
-        
-        // 重置阴影
-        this.ctx.shadowColor = 'transparent';
-        this.ctx.shadowBlur = 0;
-        this.ctx.shadowOffsetX = 0;
-        this.ctx.shadowOffsetY = 0;
+        this.ctx.restore();
     }
     
     /**
@@ -184,6 +256,26 @@ class GameUI {
         if (lastMove) {
             this.highlightLastMove(lastMove.row, lastMove.col);
         }
+
+        // 服务器状态已同步，清除本地预落子
+        this.pendingMove = null;
+    }
+
+    /**
+     * 绘制在线模式下的预落子效果（轻量高亮）
+     */
+    drawPendingMove(row, col) {
+        const x = this.boardPadding + col * this.cellSize;
+        const y = this.boardPadding + row * this.cellSize;
+
+        this.ctx.save();
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([4, 4]);
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, this.cellSize * 0.35, 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.restore();
     }
     
     /**
@@ -191,6 +283,13 @@ class GameUI {
      */
     setupEventListeners() {
         this.canvas.addEventListener('click', (e) => {
+            // 这是一个备用方案，主要用于PC端鼠标点击
+            // 移动端由于会有300ms延迟，主要依靠 touchend 处理
+            // 这里我们可以通过检测最近是否有 touch 事件来避免重复触发
+            if (this.lastTouchTime && Date.now() - this.lastTouchTime < 500) {
+                return;
+            }
+            
             if (!this.network.isConnected || this.game.getState() !== 'playing') {
                 return;
             }
@@ -206,39 +305,68 @@ class GameUI {
             this.handleCellClick(row, col);
         });
 
+        // 触摸开始：记录坐标
         this.canvas.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            this.touchStartX = t.clientX;
+            this.touchStartY = t.clientY;
+            // 注意：这里不再调用 preventDefault()，允许用户滑动页面
+        }, { passive: true });
+
+        // 触摸结束：判断是点击还是滑动
+        this.canvas.addEventListener('touchend', (e) => {
             if (!this.network.isConnected || this.game.getState() !== 'playing') {
                 return;
             }
-            const t = e.touches && e.touches[0];
-            if (!t) return;
-            const rect = this.canvas.getBoundingClientRect();
-            const scaleX = this.canvas.width / rect.width;
-            const scaleY = this.canvas.height / rect.height;
-            const x = (t.clientX - rect.left) * scaleX;
-            const y = (t.clientY - rect.top) * scaleY;
-            let col = Math.round((x - this.boardPadding) / this.cellSize);
-            let row = Math.round((y - this.boardPadding) / this.cellSize);
-            col = Math.max(0, Math.min(this.boardSize - 1, col));
-            row = Math.max(0, Math.min(this.boardSize - 1, row));
-            this.handleCellClick(row, col);
-            e.preventDefault();
+            
+            const t = e.changedTouches[0];
+            const touchEndX = t.clientX;
+            const touchEndY = t.clientY;
+            
+            // 计算移动距离
+            const dx = touchEndX - this.touchStartX;
+            const dy = touchEndY - this.touchStartY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // 如果移动距离小于 10px，视为点击
+            if (distance < 10) {
+                this.lastTouchTime = Date.now();
+                
+                // 阻止默认事件（如鼠标模拟点击），防止点透
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                const x = (touchEndX - rect.left) * scaleX;
+                const y = (touchEndY - rect.top) * scaleY;
+                let col = Math.round((x - this.boardPadding) / this.cellSize);
+                let row = Math.round((y - this.boardPadding) / this.cellSize);
+                col = Math.max(0, Math.min(this.boardSize - 1, col));
+                row = Math.max(0, Math.min(this.boardSize - 1, row));
+                this.handleCellClick(row, col);
+            }
         }, { passive: false });
         
-        this.canvas.addEventListener('mousemove', (e) => {
-            const rect = this.canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const col = Math.round((x - this.boardPadding) / this.cellSize);
-            const row = Math.round((y - this.boardPadding) / this.cellSize);
-            
-            if (row >= 0 && row < this.boardSize && col >= 0 && col < this.boardSize) {
-                this.canvas.style.cursor = 'pointer';
-            } else {
-                this.canvas.style.cursor = 'default';
-            }
-        });
+        // 仅在支持鼠标的设备上监听 mousemove，避免移动端性能损耗
+        if (window.matchMedia('(hover: hover)').matches) {
+            this.canvas.addEventListener('mousemove', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const col = Math.round((x - this.boardPadding) / this.cellSize);
+                const row = Math.round((y - this.boardPadding) / this.cellSize);
+                
+                if (row >= 0 && row < this.boardSize && col >= 0 && col < this.boardSize) {
+                    this.canvas.style.cursor = 'pointer';
+                } else {
+                    this.canvas.style.cursor = 'default';
+                }
+            });
+        }
     }
     
     /**
@@ -254,7 +382,11 @@ class GameUI {
 
         if (inOnlineRoom) {
             // 在线模式：完全由服务器裁决是否能落子以及轮到谁
-            // 这里只把点击位置发给服务器，本地不直接修改棋盘状态
+            // 避免连续快速点击产生多个“待确认”高亮
+            if (!this.pendingMove) {
+                this.pendingMove = { row, col };
+                this.drawPendingMove(row, col);
+            }
             this.network.makeMove(row, col);
             return;
         }
@@ -270,6 +402,7 @@ class GameUI {
         if (result && result.success) {
             this.drawPiece(row, col, current);
             this.highlightLastMove(row, col);
+            this.playMoveSound();
             this.updateTurnIndicator();
 
             if (result.gameOver) {
