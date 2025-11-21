@@ -42,6 +42,14 @@ class NetworkManager {
      */
     connect(serverUrl = null) {
         try {
+            // 1. 如果已存在连接，先断开并清理
+            if (this.socket) {
+                console.log('正在断开旧连接并清理...');
+                this.socket.removeAllListeners();
+                this.socket.disconnect();
+                this.socket = null;
+            }
+
             // 使用Socket.IO连接到服务器
             const ioUrl = serverUrl || this.getServerUrl();
             console.log('正在连接Socket.IO到:', ioUrl);

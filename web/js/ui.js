@@ -16,6 +16,8 @@ class GameUI {
         this.localScores = { 1: 0, 2: 0 };
         // 在线模式下用于记录“待确认”的预落子高亮
         this.pendingMove = null;
+        // 落子延迟定时器
+        this.moveTimer = null;
         
         this.setupCanvas();
         this.setupEventListeners();
@@ -70,6 +72,88 @@ class GameUI {
         } catch (e) {
             console.error('播放音效失败:', e);
         }
+    }
+    
+    /**
+     * 播放胜利音效 (C大调琶音: C4 E4 G4 C5)
+     */
+    playWinSound() {
+        if (!this.audioCtx) return;
+        
+        const now = this.audioCtx.currentTime;
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+        
+        notes.forEach((freq, i) => {
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            
+            osc.type = 'triangle'; // 三角波，声音比较明亮
+            osc.frequency.value = freq;
+            
+            // 琶音效果：每个音符间隔 0.1s
+            const startTime = now + i * 0.1;
+            
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+            
+            osc.start(startTime);
+            osc.stop(startTime + 0.4);
+        });
+    }
+
+    /**
+     * 绘制获胜特效
+     */
+    drawWinningEffects(winningLine) {
+        this.ctx.save();
+        
+        // 金色发光设定
+        this.ctx.shadowColor = '#FFD700'; // 金色
+        this.ctx.shadowBlur = 20;
+        this.ctx.strokeStyle = '#FFD700';
+        this.ctx.lineWidth = 3;
+        
+        winningLine.forEach(([row, col]) => {
+            const x = this.boardPadding + col * this.cellSize;
+            const y = this.boardPadding + row * this.cellSize;
+            
+            // 1. 画一个金色圆环
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, this.cellSize * 0.45, 0, Math.PI * 2);
+            this.ctx.stroke();
+            
+            // 2. 画一个中心高亮点
+            this.ctx.beginPath();
+            this.ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+            this.ctx.arc(x, y, this.cellSize * 0.2, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        
+        // 3. 画连线贯穿
+        if (winningLine.length > 1) {
+            this.ctx.beginPath();
+            this.ctx.lineWidth = 4;
+            this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+            
+            const start = winningLine[0];
+            const end = winningLine[winningLine.length - 1];
+            
+            this.ctx.moveTo(
+                this.boardPadding + start[1] * this.cellSize, 
+                this.boardPadding + start[0] * this.cellSize
+            );
+            this.ctx.lineTo(
+                this.boardPadding + end[1] * this.cellSize, 
+                this.boardPadding + end[0] * this.cellSize
+            );
+            this.ctx.stroke();
+        }
+        
+        this.ctx.restore();
     }
     
     /**
@@ -174,11 +258,12 @@ class GameUI {
         );
 
         if (player === 1) {
-            // 黑子：模拟黑玉/玛瑙质感
-            // 中心是深灰色反光，边缘是纯黑
-            gradient.addColorStop(0, '#666666');
-            gradient.addColorStop(0.3, '#222222');
-            gradient.addColorStop(1, '#000000');
+            // 黑子：模拟黑曜石/玻璃质感
+            // 调整：高光点更亮（模拟反光），但过渡更快（主体纯黑）
+            // 这样会看起来更有光泽，而不是灰蒙蒙的塑料感
+            gradient.addColorStop(0, '#AAAAAA');  // 亮灰高光
+            gradient.addColorStop(0.2, '#111111'); // 迅速变黑
+            gradient.addColorStop(1, '#000000');   // 边缘纯黑
             this.ctx.fillStyle = gradient;
         } else {
             // 白子：模拟云子/贝壳质感
@@ -251,14 +336,27 @@ class GameUI {
             }
         }
         
+        // 高亮获胜连线（如果有）
+        const winner = this.game.getWinner(); // 获取获胜方
+        const gameState = this.game.getGameState(); // 为了获取 winningLine
+        // 注意：game.getWinner() 返回的是数字(1或2)，server发来的 winner info 才有 winningLine
+        // 我们需要从最近一次的 gameOver 结果或者 gameState 中找 winningLine
+        // 这里的 gameState 是本地的，可能不全。
+        // 实际上我们在 showGameOver 时接收了 winningLine，最好存在 this 上
+        if (this.winningLine && this.winningLine.length > 0) {
+            this.drawWinningEffects(this.winningLine);
+        }
+        
         // 高亮最后一步
         const lastMove = this.game.getLastMove();
         if (lastMove) {
             this.highlightLastMove(lastMove.row, lastMove.col);
         }
 
-        // 服务器状态已同步，清除本地预落子
-        this.pendingMove = null;
+        // 绘制预落子（虚影）
+        if (this.pendingMove) {
+            this.drawPendingMove(this.pendingMove.row, this.pendingMove.col);
+        }
     }
 
     /**
@@ -267,13 +365,21 @@ class GameUI {
     drawPendingMove(row, col) {
         const x = this.boardPadding + col * this.cellSize;
         const y = this.boardPadding + row * this.cellSize;
-
+        
+        // 1. 绘制半透明棋子虚影
         this.ctx.save();
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.globalAlpha = 0.6; // 半透明
+        const currentPlayer = this.game.getCurrentPlayer();
+        this.drawPiece(row, col, currentPlayer);
+        this.ctx.restore();
+
+        // 2. 绘制虚线框，表示"待确认"
+        this.ctx.save();
+        this.ctx.strokeStyle = '#ff3333'; // 红色虚线框，醒目
         this.ctx.lineWidth = 2;
-        this.ctx.setLineDash([4, 4]);
+        this.ctx.setLineDash([5, 5]);
         this.ctx.beginPath();
-        this.ctx.arc(x, y, this.cellSize * 0.35, 0, Math.PI * 2);
+        this.ctx.arc(x, y, this.cellSize * 0.45, 0, Math.PI * 2); // 比棋子稍大一圈
         this.ctx.stroke();
         this.ctx.restore();
     }
@@ -373,54 +479,93 @@ class GameUI {
      * 处理格子点击
      */
     handleCellClick(row, col) {
-        // 先判断当前是否处于“在线房间模式”
+        // 如果游戏没开始，或者不是你的回合，直接忽略
+        if (this.game.getState() !== 'playing') return;
+
+        // 检查是否轮到当前客户端对应的玩家操作
+        if (!this.game.canMakeMove(row, col)) return;
+
+        // 1. 清除之前的定时器（如果有），这就实现了“后悔”机制
+        // 只要在倒计时结束前点了别的地方，上一步就不会发生
+        if (this.moveTimer) {
+            clearTimeout(this.moveTimer);
+            this.moveTimer = null;
+        }
+
+        // 2. 更新虚影位置
+        this.pendingMove = { row, col };
+        this.playMoveSound(); // 播放选点音效
+        this.updateBoard(); // 重绘以显示虚影
+
+        // 3. 启动延迟落子定时器 (600ms)
+        this.moveTimer = setTimeout(() => {
+            // 再次检查是否还能落子（防止这几百毫秒内游戏状态变了）
+            if (this.game.getState() === 'playing' && this.game.canMakeMove(row, col)) {
+                this.executeMove(row, col);
+                // 落子后清除虚影和定时器引用
+                this.pendingMove = null;
+                this.moveTimer = null;
+                this.updateBoard();
+            }
+        }, 600);
+    }
+
+    /**
+     * 执行真正的落子逻辑
+     */
+    executeMove(row, col) {
+        // 判断当前是否处于“在线房间模式”
         const inOnlineRoom =
             this.network &&
             this.network.isConnected &&
             typeof this.network.getRoomId === 'function' &&
             this.network.getRoomId();
 
-        if (inOnlineRoom) {
-            // 在线模式：完全由服务器裁决是否能落子以及轮到谁
-            // 避免连续快速点击产生多个“待确认”高亮
-            if (!this.pendingMove) {
-                this.pendingMove = { row, col };
-                this.drawPendingMove(row, col);
-            }
-            this.network.makeMove(row, col);
-            return;
-        }
-
-        // 本地/离线模式：使用前端 GobangGame 进行完整落子和判定
-        if (!this.game.canMakeMove(row, col)) {
-            return;
-        }
-
         const current = this.game.getCurrentPlayer();
-        const result = this.game.makeMove(row, col, current);
 
-        if (result && result.success) {
-            this.drawPiece(row, col, current);
-            this.highlightLastMove(row, col);
-            this.playMoveSound();
-            this.updateTurnIndicator();
+        if (inOnlineRoom) {
+            // 乐观更新策略 (Optimistic Update)：
+            // 1. 先在本地假装落子成功，让用户感觉"零延迟"
+            const localResult = this.game.makeMove(row, col, current);
+            if (localResult && localResult.success) {
+                this.drawPiece(row, col, current);
+                this.highlightLastMove(row, col);
+                this.playMoveSound();
+                this.updateTurnIndicator();
+                
+                // 记录这一步是乐观更新的，用于后续校对
+                this.lastOptimisticMove = { row, col, player: current };
+            }
 
-            if (result.gameOver) {
-                if (result.winner) {
-                    const winnerPlayer = result.winner; // 1=黑,2=白
-                    if (this.localScores[winnerPlayer] !== undefined) {
-                        this.localScores[winnerPlayer] += 1;
+            // 2. 再发送给服务器
+            this.network.makeMove(row, col);
+        } else {
+            // 本地模式：直接落子
+            const result = this.game.makeMove(row, col, current);
+
+            if (result && result.success) {
+                this.drawPiece(row, col, current);
+                this.highlightLastMove(row, col);
+                this.playMoveSound();
+                this.updateTurnIndicator();
+
+                if (result.gameOver) {
+                    if (result.winner) {
+                        const winnerPlayer = result.winner;
+                        if (this.localScores[winnerPlayer] !== undefined) {
+                            this.localScores[winnerPlayer] += 1;
+                        }
+                        this.updateScores(this.localScores);
+
+                        const winnerInfo = {
+                            player: winnerPlayer,
+                            playerName: winnerPlayer === 1 ? '黑方' : '白方',
+                            winningLine: []
+                        };
+                        this.showGameOver(winnerInfo);
+                    } else {
+                        this.showGameOver(null);
                     }
-                    this.updateScores(this.localScores);
-
-                    const winnerInfo = {
-                        player: winnerPlayer,
-                        playerName: winnerPlayer === 1 ? '黑方' : '白方',
-                        winningLine: []
-                    };
-                    this.showGameOver(winnerInfo);
-                } else {
-                    this.showGameOver(null);
                 }
             }
         }
@@ -539,15 +684,27 @@ class GameUI {
      * 显示游戏结束弹窗
      */
     showGameOver(winner) {
+        // 播放胜利音效
+        if (winner) {
+            this.playWinSound();
+            // 保存获胜连线，供重绘使用
+            if (winner.winningLine) {
+                this.winningLine = winner.winningLine;
+                this.updateBoard(); // 立即重绘以显示金光特效
+            }
+        }
+
         const modal = document.getElementById('gameOverModal');
         const gameResult = document.getElementById('gameResult');
         const gameResultDetail = document.getElementById('gameResultDetail');
         
         if (winner) {
-            gameResult.textContent = '游戏结束';
+            gameResult.textContent = 'VICTORY!';
+            gameResult.style.color = '#D2691E'; // 金棕色
             gameResultDetail.textContent = `${winner.playerName} 获胜！`;
         } else {
             gameResult.textContent = '平局！';
+            gameResult.style.color = '#666';
             gameResultDetail.textContent = '双方势均力敌';
         }
         
@@ -589,6 +746,7 @@ class GameUI {
      */
     resetUI() {
         this.game.resetGame();
+        this.winningLine = null; // 清除获胜特效
         this.updateBoard();
         this.updateTurnIndicator();
         this.showWaitingOverlay();

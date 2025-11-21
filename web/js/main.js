@@ -113,7 +113,23 @@ function setupEventListeners() {
         // 采用服务器权威状态，避免重复应用本地乐观更新
         game.setGameState(roomInfo.gameState);
         ui.updateBoard();
-        ui.playMoveSound();
+
+        // 检查是否是刚才本地乐观更新的那一步
+        const serverLastMove = roomInfo.gameState.moveHistory[roomInfo.gameState.moveHistory.length - 1];
+        const isMyOptimisticMove = ui.lastOptimisticMove && 
+            serverLastMove &&
+            serverLastMove.row === ui.lastOptimisticMove.row && 
+            serverLastMove.col === ui.lastOptimisticMove.col;
+
+        // 如果不是我自己刚刚下的那一步（即对手下的，或者乐观更新失败回滚后的），才播放声音
+        // 这样避免了自己下棋听到两声响
+        if (!isMyOptimisticMove) {
+            ui.playMoveSound();
+        }
+
+        // 清除乐观更新标记
+        ui.lastOptimisticMove = null;
+
         // 已收到服务器权威落子结果，清除本地预落子状态（如果有）
         if (ui.pendingMove) {
             ui.pendingMove = null;
