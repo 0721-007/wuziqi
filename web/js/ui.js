@@ -163,327 +163,117 @@ class GameUI {
      */
     setupCanvas() {
         const parent = this.canvas.parentElement;
+        // 获取父容器的实际宽度（CSS像素）
         const parentWidth = parent ? parent.clientWidth : (window.innerWidth - 40);
+        
+        // 计算理想的格子大小，确保能放下
+        // boardPadding 设为较小值，适应手机屏幕
+        this.boardPadding = 15;
         const idealCell = Math.floor((parentWidth - this.boardPadding * 2) / this.boardSize);
-        this.cellSize = Math.max(24, Math.min(40, idealCell));
-        const width = this.boardSize * this.cellSize + this.boardPadding * 2;
-        const height = this.boardSize * this.cellSize + this.boardPadding * 2;
         
-        // Retina 屏幕适配 (DPI 缩放)
+        // 限制格子大小范围
+        this.cellSize = Math.max(20, Math.min(45, idealCell));
+        
+        // 计算 Canvas 的逻辑宽高 (CSS像素)
+        const logicWidth = this.boardSize * this.cellSize + this.boardPadding * 2;
+        const logicHeight = logicWidth; // 正方形
+
+        // Retina 屏幕适配
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = width * dpr;
-        this.canvas.height = height * dpr;
         
-        // 保持 CSS 尺寸不变
-        this.canvas.style.width = `${width}px`;
-        this.canvas.style.height = `${height}px`;
+        // 设置 Canvas 的物理像素尺寸 (更清晰)
+        this.canvas.width = logicWidth * dpr;
+        this.canvas.height = logicHeight * dpr;
         
+        // 设置 Canvas 的 CSS 尺寸 (逻辑尺寸)
+        this.canvas.style.width = `${logicWidth}px`;
+        this.canvas.style.height = `${logicHeight}px`;
+        
+        // 重置变换矩阵，确保 scale 不会叠加
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        // 应用缩放，让后续绘图指令直接使用逻辑坐标
         this.ctx.scale(dpr, dpr);
         
         this.drawBoard();
-        window.addEventListener('resize', () => {
+        
+        // 监听窗口大小改变，重新调整
+        // 移除旧的监听器（防止重复添加暂不处理，简单通过覆盖）
+        window.onresize = () => {
             this.setupCanvas();
             this.updateBoard();
-        });
-    }
-    
-    /**
-     * 绘制棋盘
-     */
-    drawBoard() {
-        this.ctx.fillStyle = '#DEB887';
-        // 注意：fillRect 的参数是逻辑像素，scale 会自动处理
-        this.ctx.fillRect(0, 0, this.boardSize * this.cellSize + this.boardPadding * 2, this.boardSize * this.cellSize + this.boardPadding * 2);
-        
-        this.ctx.strokeStyle = '#8B4513';
-        this.ctx.lineWidth = 1;
-        
-        // 绘制网格线
-        for (let i = 0; i < this.boardSize; i++) {
-            const x = this.boardPadding + i * this.cellSize;
-            const y = this.boardPadding + i * this.cellSize;
-            
-            // 横线
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.boardPadding, y);
-            this.ctx.lineTo(this.boardSize * this.cellSize + this.boardPadding, y); // 修正为实际棋盘宽度
-            this.ctx.stroke();
-            
-            // 竖线
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, this.boardPadding);
-            this.ctx.lineTo(x, this.boardSize * this.cellSize + this.boardPadding); // 修正为实际棋盘高度
-            this.ctx.stroke();
-        }
-
-        // 外边框
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeStyle = '#8B4513';
-        this.ctx.strokeRect(
-            this.boardPadding,
-            this.boardPadding,
-            this.boardSize * this.cellSize, // 修正：不需要减 padding * 2，因为起点是 padding
-            this.boardSize * this.cellSize
-        );
-        
-        // 绘制星位
-        const starPoints = [
-            [3, 3], [3, 11], [11, 3], [11, 11], [7, 7]
-        ];
-        
-        this.ctx.fillStyle = '#8B4513';
-        starPoints.forEach(([row, col]) => {
-            const x = this.boardPadding + col * this.cellSize;
-            const y = this.boardPadding + row * this.cellSize;
-            
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, 3, 0, 2 * Math.PI);
-            this.ctx.fill();
-        });
-    }
-    
-    /**
-     * 绘制棋子
-     */
-    drawPiece(row, col, player) {
-        const x = this.boardPadding + col * this.cellSize;
-        const y = this.boardPadding + row * this.cellSize;
-        const radius = this.cellSize * 0.42; // 稍微调大一点点，更饱满
-
-        this.ctx.save();
-        
-        // 1. 绘制阴影 (Shadow)
-        this.ctx.beginPath();
-        this.ctx.arc(x + 2, y + 2, radius, 0, 2 * Math.PI);
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        this.ctx.fill();
-
-        // 2. 绘制棋子主体 (Body)
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
-
-        // 设置径向渐变，模拟光照 (光源设定在左上偏上)
-        // 参数: x0, y0, r0, x1, y1, r1
-        // 光源点在棋子的左上方 (x - radius/3, y - radius/3)
-        const gradient = this.ctx.createRadialGradient(
-            x - radius / 3, y - radius / 3, radius / 10, // 内圆（高光中心）
-            x, y, radius                                 // 外圆（棋子边缘）
-        );
-
-        if (player === 1) {
-            // 黑子：模拟黑曜石/玻璃质感
-            // 调整：高光点更亮（模拟反光），但过渡更快（主体纯黑）
-            // 这样会看起来更有光泽，而不是灰蒙蒙的塑料感
-            gradient.addColorStop(0, '#AAAAAA');  // 亮灰高光
-            gradient.addColorStop(0.2, '#111111'); // 迅速变黑
-            gradient.addColorStop(1, '#000000');   // 边缘纯黑
-            this.ctx.fillStyle = gradient;
-        } else {
-            // 白子：模拟云子/贝壳质感
-            // 中心是亮白，边缘是暖白/浅灰
-            gradient.addColorStop(0, '#FFFFFF');
-            gradient.addColorStop(0.3, '#F0F0F0');
-            gradient.addColorStop(1, '#D0D0D0');
-            this.ctx.fillStyle = gradient;
-        }
-
-        this.ctx.fill();
-
-        // 3. 移除之前的描边逻辑，因为渐变已经自带立体感，描边会破坏真实感
-        // 仅给白子加极淡的边缘线防止与背景混淆（如果背景太浅）
-        if (player === 2) {
-            this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
-            this.ctx.lineWidth = 1;
-            this.ctx.stroke();
-        }
-        
-        this.ctx.restore();
-    }
-    
-    /**
-     * 高亮最后一步
-     */
-    highlightLastMove(row, col) {
-        const x = this.boardPadding + col * this.cellSize;
-        const y = this.boardPadding + row * this.cellSize;
-        
-        this.ctx.save();
-        this.ctx.strokeStyle = '#ff3333'; // 更鲜艳的红
-        this.ctx.lineWidth = 2;
-        
-        // 绘制一个小十字符号，而不是圆圈，这样更现代且不遮挡棋子质感
-        const size = this.cellSize * 0.15;
-        
-        this.ctx.beginPath();
-        // 横线
-        this.ctx.moveTo(x - size, y);
-        this.ctx.lineTo(x + size, y);
-        // 竖线
-        this.ctx.moveTo(x, y - size);
-        this.ctx.lineTo(x, y + size);
-        
-        this.ctx.stroke();
-        
-        // 再加一个小圆点在中心，颜色反转
-        this.ctx.fillStyle = '#ff3333';
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        this.ctx.restore();
-    }
-    
-    /**
-     * 更新棋盘
-     */
-    updateBoard() {
-        this.drawBoard();
-        
-        // 绘制所有棋子
-        for (let row = 0; row < this.boardSize; row++) {
-            for (let col = 0; col < this.boardSize; col++) {
-                const player = this.game.getPiece(row, col);
-                if (player !== 0) {
-                    this.drawPiece(row, col, player);
-                }
-            }
-        }
-        
-        // 高亮获胜连线（如果有）
-        const winner = this.game.getWinner(); // 获取获胜方
-        const gameState = this.game.getGameState(); // 为了获取 winningLine
-        // 注意：game.getWinner() 返回的是数字(1或2)，server发来的 winner info 才有 winningLine
-        // 我们需要从最近一次的 gameOver 结果或者 gameState 中找 winningLine
-        // 这里的 gameState 是本地的，可能不全。
-        // 实际上我们在 showGameOver 时接收了 winningLine，最好存在 this 上
-        if (this.winningLine && this.winningLine.length > 0) {
-            this.drawWinningEffects(this.winningLine);
-        }
-        
-        // 高亮最后一步
-        const lastMove = this.game.getLastMove();
-        if (lastMove) {
-            this.highlightLastMove(lastMove.row, lastMove.col);
-        }
-
-        // 绘制预落子（虚影）
-        if (this.pendingMove) {
-            this.drawPendingMove(this.pendingMove.row, this.pendingMove.col);
-        }
+        };
     }
 
-    /**
-     * 绘制在线模式下的预落子效果（轻量高亮）
-     */
-    drawPendingMove(row, col) {
-        const x = this.boardPadding + col * this.cellSize;
-        const y = this.boardPadding + row * this.cellSize;
-        
-        // 1. 绘制半透明棋子虚影
-        this.ctx.save();
-        this.ctx.globalAlpha = 0.6; // 半透明
-        const currentPlayer = this.game.getCurrentPlayer();
-        this.drawPiece(row, col, currentPlayer);
-        this.ctx.restore();
-
-        // 2. 绘制虚线框，表示"待确认"
-        this.ctx.save();
-        this.ctx.strokeStyle = '#ff3333'; // 红色虚线框，醒目
-        this.ctx.lineWidth = 2;
-        this.ctx.setLineDash([5, 5]);
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, this.cellSize * 0.45, 0, Math.PI * 2); // 比棋子稍大一圈
-        this.ctx.stroke();
-        this.ctx.restore();
-    }
-    
     /**
      * 设置事件监听器
      */
     setupEventListeners() {
-        this.canvas.addEventListener('click', (e) => {
-            // 这是一个备用方案，主要用于PC端鼠标点击
-            // 移动端由于会有300ms延迟，主要依靠 touchend 处理
-            // 这里我们可以通过检测最近是否有 touch 事件来避免重复触发
-            if (this.lastTouchTime && Date.now() - this.lastTouchTime < 500) {
-                return;
-            }
-            
+        // 通用点击处理函数
+        const handleInput = (clientX, clientY) => {
             if (!this.network.isConnected || this.game.getState() !== 'playing') {
                 return;
             }
+            
             const rect = this.canvas.getBoundingClientRect();
-            const scaleX = this.canvas.width / rect.width;
-            const scaleY = this.canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
+            
+            // 获取相对于 Canvas 左上角的 CSS 像素坐标
+            // 关键修复：这里不需要乘 dpr，因为我们所有的逻辑计算（cellSize等）都是基于 CSS 像素的
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            // 计算行列
+            // 加上 0.5 是为了四舍五入更自然
             let col = Math.round((x - this.boardPadding) / this.cellSize);
             let row = Math.round((y - this.boardPadding) / this.cellSize);
-            col = Math.max(0, Math.min(this.boardSize - 1, col));
-            row = Math.max(0, Math.min(this.boardSize - 1, row));
-            this.handleCellClick(row, col);
+            
+            // 边界检查
+            if (col >= 0 && col < this.boardSize && row >= 0 && row < this.boardSize) {
+                // 增加点击范围容错：检查点击点是否真的在交叉点附近
+                // 比如点击范围在交叉点半径 40% 以内才算有效，防止误触
+                const centerX = this.boardPadding + col * this.cellSize;
+                const centerY = this.boardPadding + row * this.cellSize;
+                const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                
+                if (dist < this.cellSize * 0.6) { // 稍微宽松一点，60%
+                    this.handleCellClick(row, col);
+                }
+            }
+        };
+
+        this.canvas.addEventListener('click', (e) => {
+            // PC端点击
+            // 如果最近有过 touch 事件，忽略 click 防止双重触发
+            if (this.lastTouchTime && Date.now() - this.lastTouchTime < 500) return;
+            handleInput(e.clientX, e.clientY);
         });
 
-        // 触摸开始：记录坐标
+        // 触摸事件处理
         this.canvas.addEventListener('touchstart', (e) => {
             const t = e.touches[0];
             this.touchStartX = t.clientX;
             this.touchStartY = t.clientY;
-            // 注意：这里不再调用 preventDefault()，允许用户滑动页面
         }, { passive: true });
 
-        // 触摸结束：判断是点击还是滑动
         this.canvas.addEventListener('touchend', (e) => {
-            if (!this.network.isConnected || this.game.getState() !== 'playing') {
-                return;
-            }
+            if (!this.network.isConnected || this.game.getState() !== 'playing') return;
             
             const t = e.changedTouches[0];
-            const touchEndX = t.clientX;
-            const touchEndY = t.clientY;
+            const dx = t.clientX - this.touchStartX;
+            const dy = t.clientY - this.touchStartY;
             
-            // 计算移动距离
-            const dx = touchEndX - this.touchStartX;
-            const dy = touchEndY - this.touchStartY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // 如果移动距离小于 10px，视为点击
-            if (distance < 10) {
+            // 判断是否是点击（位移很小）
+            if (Math.sqrt(dx*dx + dy*dy) < 10) {
                 this.lastTouchTime = Date.now();
-                
-                // 阻止默认事件（如鼠标模拟点击），防止点透
-                if (e.cancelable) {
-                    e.preventDefault();
-                }
-                
-                const rect = this.canvas.getBoundingClientRect();
-                const scaleX = this.canvas.width / rect.width;
-                const scaleY = this.canvas.height / rect.height;
-                const x = (touchEndX - rect.left) * scaleX;
-                const y = (touchEndY - rect.top) * scaleY;
-                let col = Math.round((x - this.boardPadding) / this.cellSize);
-                let row = Math.round((y - this.boardPadding) / this.cellSize);
-                col = Math.max(0, Math.min(this.boardSize - 1, col));
-                row = Math.max(0, Math.min(this.boardSize - 1, row));
-                this.handleCellClick(row, col);
+                if (e.cancelable) e.preventDefault();
+                handleInput(t.clientX, t.clientY);
             }
         }, { passive: false });
         
-        // 仅在支持鼠标的设备上监听 mousemove，避免移动端性能损耗
+        // 鼠标悬停效果
         if (window.matchMedia('(hover: hover)').matches) {
             this.canvas.addEventListener('mousemove', (e) => {
-                const rect = this.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const col = Math.round((x - this.boardPadding) / this.cellSize);
-                const row = Math.round((y - this.boardPadding) / this.cellSize);
-                
-                if (row >= 0 && row < this.boardSize && col >= 0 && col < this.boardSize) {
-                    this.canvas.style.cursor = 'pointer';
-                } else {
-                    this.canvas.style.cursor = 'default';
-                }
+                // 简单判断是否在范围内，改变光标
+                this.canvas.style.cursor = 'pointer';
             });
         }
     }
