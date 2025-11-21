@@ -503,8 +503,13 @@ class GameUI {
             typeof this.network.getRoomId === 'function' &&
             this.network.getRoomId();
 
-        if (inOnlineRoom && this.myPlayerNumber !== null) {
-            // 严格校验：如果你是观众或者还没轮到你，不能操作
+        if (inOnlineRoom) {
+            // 必须已确定身份
+            if (this.myPlayerNumber === null) {
+                console.warn('尚未确定玩家身份，禁止操作');
+                return;
+            }
+            // 必须轮到自己
             if (this.myPlayerNumber !== this.game.getCurrentPlayer()) {
                 return;
             }

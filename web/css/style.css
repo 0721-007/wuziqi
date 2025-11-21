@@ -398,6 +398,38 @@ body {
     box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
 }
 
+/* 开局提示 Toast (ElMessage 风格) */
+.game-start-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffffff;
+    color: #606266;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #dcdfe6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s, top 0.4s;
+    pointer-events: none;
+}
+
+.game-start-toast i {
+    font-size: 16px;
+}
+
+.game-start-toast.show {
+    opacity: 1;
+    top: 40px;
+}
+
 /* 模态框 */
 .modal {
     position: fixed;
